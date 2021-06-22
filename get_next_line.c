@@ -26,6 +26,13 @@
 
 #include "get_next_line.h"
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+
 // allocate memory that consists only of '\0' bytes
 void	*ft_calloc(size_t nmemb, size_t n)
 {
@@ -77,31 +84,47 @@ char	*ft_getjoin(char *s1, char *s2, size_t n)
 		i++;
 		n--;
 	}
-	free(s1);
+	//free(s1);
 	return (res);
 }
 
-char	*ft_getrest(char *temp)
+// getrest has a few interesting cases; if there is more than one line ending 
+// the function should not read again but end and give the even next line when
+// called again. therefore i look throught the buffer for the \n and count
+// until the buffer ended or there is another \n, then i alloc that amout and
+// copy the segment but also change the first \n to something else, so that the
+// next function call skips the current segment.
+
+void	ft_getrest(char *res, char *temp, size_t n)
 {
-	char	*res;
 	size_t	i;
 	size_t	j;
+	size_t	k;
 
 	i = 0;
 	while (temp[i] && temp[i] != '\n')
 		i++;
 	if (!temp[i])
-		return (ft_calloc(BUFFER_SIZE, sizeof(char)));
-	i++;
-	res = ft_calloc(BUFFER_SIZE - i + 1, sizeof(char));
-	j = 0;
-	while (temp[i])
+		res = ft_calloc(1, sizeof(char));
+	else
 	{
-		res[j] = temp[i];
+		temp[i] = 'N';
 		i++;
-		j++;
+		k = i;
+		while (temp[k] && temp[k] != '\n')
+			k++;
+		res = ft_calloc(k - i + 1, sizeof(char));
+		j = 0;
+		while (i < k)
+		{
+			res[j] = temp[i];
+			i++;
+			j++;
+		}
+		if (k != BUFFER_SIZE)
+			n = -1;
 	}
-	return (res);
+	
 }
 
 void	ft_bzero(void *s, size_t n)
@@ -118,8 +141,9 @@ void	ft_bzero(void *s, size_t n)
 
 char	*getcontent(int fd, char *res, char *temp, size_t n)
 {
-	size_t		stay;
+	size_t	stay;
 
+	stay = 1;
 	while (stay > 0)
 	{
 		ft_bzero(temp, BUFFER_SIZE);
@@ -140,6 +164,11 @@ char	*getcontent(int fd, char *res, char *temp, size_t n)
 	return (res);
 }
 
+//temp is the bufferlengthcharacters of read
+//res is the string into which the temps are concatenated
+//n is for one a couter in subfunctions but also an indicator if the
+//leftover chars from the previous calls lead to an EOL so that we mustn't Read
+
 int	get_next_line(int fd, char **line)
 {
 	static char	*temp;
@@ -147,11 +176,14 @@ int	get_next_line(int fd, char **line)
 	size_t		n;
 
 	n = 0;
-	temp = ft_calloc((BUFFER_SIZE + 1), sizeof(char));
-	res = ft_getrest(temp);
-	if (!res || !temp)
+	res = ft_calloc(1, sizeof(char));
+	if (!temp)
+		temp = ft_calloc((BUFFER_SIZE + 1), sizeof(char));
+	ft_getrest(res, temp, n);
+	if (!temp)
 		return (-1);
-	res = getcontent(fd, res, temp, n);
+	if (n >= 0)
+		res = getcontent(fd, res, temp, n);
 	if (!res)
 		return (-1);
 	*line = res;
@@ -202,7 +234,7 @@ int main(void)
 	for (int i = 0; i < 5; i++)
 	{
 		get_next_line(fd, &str);
-		printf("%s\n",str);
+		printf("%d %s\n",(i + 1), str);
 	}
 	close(fd);
 }
