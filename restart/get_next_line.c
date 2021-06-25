@@ -6,7 +6,7 @@
 /*   By: clems <clems@student.42.fr>                +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/04 15:53:45 by clems             #+#    #+#             */
-/*   Updated: 2021/06/23 20:18:40 by clems            ###   ########.fr       */
+/*   Updated: 2021/06/24 16:25:53 by clems            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -73,100 +73,58 @@ size_t	ft_strlen(char *s)
 	return (i);
 }
 
-char	*ft_getjoin(char *s1, char *s2, size_t n)
+void	ft_getjoin(char *line, char *buffer, size_t n)
 {
 	char	*res;
 	size_t	i;
 	size_t	j;
 
-	res = ft_calloc(ft_strlen(s1) + n + 1, sizeof(char));
+	res = ft_calloc(ft_strlen(line) + n + 1, sizeof(char));
 	if (!res)
-		return (NULL);
+		return ;
 	i = 0;
-	while (s1[i])
+	while (line[i])
 	{
-		res[i] = s1[i];
+		res[i] = line[i];
 		i++;
 	}
 	j = 0;
-	while (s2[j] && n > 0)
+	while (buffer[j] && n > 0)
 	{
-		res[i] = s2[j];
+		res[i] = buffer[j];
 		j++;
 		i++;
 		n--;
 	}
-	//free(s1);
-	return (res);
+	free (line);
+	line = res;
 }
 
-// getrest has a few interesting cases; if there is more than one line ending 
-// the function should not read again but end and give the even next line when
-// called again. therefore i look throught the buffer for the \n and count
-// until the buffer ended or there is another \n, then i alloc that amout and
-// copy the segment but also change the first \n to something else, so that the
-// next function call skips the current segment.
-
-//void	ft_getrest(char *res, char *temp, size_t n)
-//{
-//	size_t	i;
-//	size_t	j;
-//	size_t	k;
-//
-//	i = 0;
-//	while (temp[i] && temp[i] != '\n')
-//		i++;
-//	if (!temp[i])
-//		res = ft_calloc(1, sizeof(char));
-//	else
-//	{
-//		temp[i] = 'N';
-//		i++;
-//		k = i;
-//		while (temp[k] && temp[k] != '\n')
-//			k++;
-//		res = ft_calloc(k - i + 1, sizeof(char));
-//		j = 0;
-//		while (i < k)
-//		{
-//			res[j] = temp[i];
-//			i++;
-//			j++;
-//		}
-//		if (k != BUFFER_SIZE)
-//			n = -1;
-//	}
-//	
-//}
-
-
-
-char	*getcontent(int fd, char *res, char *temp, size_t n)
+char	*getcontent(int fd, char *line, char *buffer, size_t exit)
 {
 	int	stay;
-size_t		BUFFER_SIZE = 32;
 	stay = 1;
 	while (stay > 0)
 	{
-		ft_bzero(temp, BUFFER_SIZE + 1);
-		stay = read(fd, temp, BUFFER_SIZE);
+		ft_bzero(buffer, BUFFER_SIZE + 1);
+		stay = read(fd, buffer, BUFFER_SIZE);
 		if (stay < 0)
 			return (NULL);
-		n = 0;
-		while (n < BUFFER_SIZE)
+		exit = 0;
+		while (exit < BUFFER_SIZE)
 		{
 			
-			if (temp[n] == '\n')
+			if (buffer[exit] == '\n')
 				break ;
-			n++;
+			exit++;
 		}
-		res = ft_getjoin(res, temp, n);
-		if (!res)
+		ft_getjoin(line, buffer, exit);
+		if (!line)
 			return (NULL);
-		if (temp[n] == '\n')
+		if (buffer[exit] == '\n')
 			break ;
 	}
-	return (res);
+	return (line);
 }
 
 // create the buffer memory, if it doesn't exist yet
@@ -178,21 +136,19 @@ size_t		BUFFER_SIZE = 32;
 // if no second \n was found keep on reading
 // if in any subfunction an end is found, exit is changed to indicate that
 
+
+
 int	get_next_line(int fd, char **line)
 {
-	size_t		BUFFER_SIZE = 32;
-	static char	*buffer;
-	char		*curline;
+	static char	buffer[BUFFER_SIZE];
 	int			exit;
 	int			i;
 	int			c;
 	int			j;
 
 	exit = 1;
-	if (!buffer)
-		buffer = ft_calloc(BUFFER_SIZE + 1, sizeof(char));
-	else
-	{
+
+
 		i = 0;
 		while (buffer[i] != '\n' && buffer[i])
 			i++;
@@ -201,22 +157,61 @@ int	get_next_line(int fd, char **line)
 		c = 0;
 		while (buffer[c + i] != '\n' && buffer[c + i])
 			c++;
-		curline = ft_calloc(c + 1, sizeof(char));
+		*line = ft_calloc(c + 1, sizeof(char));
 		j = 0;
 		while (j < c)
 		{
-			curline[j] = buffer[j + i];
+			*line[j] = buffer[j + i];
 			j++;
 		}
 		j++;
-		if (buffer[j] == '\n')
+		if (buffer[j + i - 1] == '\n')
 			exit = 0;
-	}
+	
 	if (exit > 0)
-		curline = getcontent(fd, curline, buffer, exit);
-	*line = curline;
-	return (ft_strlen(curline));
+		*line = getcontent(fd, *line, buffer, exit);
+	*line = *line;
+	return (ft_strlen(*line));
 }
+
+//int	get_next_line(int fd, char **line)
+//{
+//	size_t		BUFFER_SIZE = 32;
+//	static char	*buffer;
+//	int			exit;
+//	int			i;
+//	int			c;
+//	int			j;
+//
+//	exit = 1;
+//	if (!buffer)
+//		buffer = ft_calloc(BUFFER_SIZE + 1, sizeof(char));
+//	else
+//	{
+//		i = 0;
+//		while (buffer[i] != '\n' && buffer[i])
+//			i++;
+//		buffer[i] = 'n';
+//		i++;
+//		c = 0;
+//		while (buffer[c + i] != '\n' && buffer[c + i])
+//			c++;
+//		*line = ft_calloc(c + 1, sizeof(char));
+//		j = 0;
+//		while (j < c)
+//		{
+//			*line[j] = buffer[j + i];
+//			j++;
+//		}
+//		j++;
+//		if (buffer[j + i - 1] == '\n')
+//			exit = 0;
+//	}
+//	if (exit > 0)
+//		*line = getcontent(fd, *line, buffer, exit);
+//	*line = *line;
+//	return (ft_strlen(*line));
+//}
 
 
 
@@ -255,7 +250,7 @@ int main(void)
 //	ft_putendl_fd("        \\              (        ", fd);
 //	ft_putendl_fd("          \\             \\       ", fd);
 //	ft_putendl_fd("", fd);
-	for (int i = 0; i < 6; i++)
+	for (int i = 0; i < 10; i++)
 	{
 		get_next_line(fd, &str);
 		printf("%d %s\n",(i + 1), str);
