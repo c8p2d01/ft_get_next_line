@@ -15,9 +15,9 @@
 
 # include <stdlib.h>
 # include <unistd.h>
-# ifndef BUFFER_SIZE
-#  define	BUFFER_SIZE 32
-# endif
+//# ifndef BUFFER_SIZE
+//#  define	BUFFER_SIZE 32
+//# endif
 void	*ft_calloc(size_t nmemb, size_t n);
 
 int get_next_line(int fd, char **line);
