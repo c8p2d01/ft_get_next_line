@@ -24,7 +24,7 @@
 //	Notes
 //	read() starts where the last read() ended
 
-#include "get_next_line.h"
+//#include "get_next_line.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -32,6 +32,8 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+
+
 
 // allocate memory that consists only of '\0' bytes
 void	*ft_calloc(size_t nmemb, size_t n)
@@ -68,60 +70,72 @@ size_t	ft_strlen(char *s)
 	size_t	i;
 
 	i = 0;
-	while (s[i])
+	if (!s)
+	    return (0);
+	while (s[i] && s)
 		i++;
 	return (i);
 }
 
-void	ft_getjoin(char *line, char *buffer, size_t n)
+void	ft_getjoin(char *line, char *buffer, size_t count)
 {
 	char	*res;
 	size_t	i;
 	size_t	j;
 
-	res = ft_calloc(ft_strlen(line) + n + 1, sizeof(char));
+	res = ft_calloc(ft_strlen(line) + count + 1, sizeof(char));
 	if (!res)
 		return ;
 	i = 0;
-	while (line[i])
+	if (line != NULL)
 	{
-		res[i] = line[i];
-		i++;
+    	while (line[i] && line)
+    	{
+    		res[i] = line[i];
+    		i++;
+    	}
 	}
 	j = 0;
-	while (buffer[j] && n > 0)
+	while (buffer[j] && count > 0)
 	{
 		res[i] = buffer[j];
 		j++;
 		i++;
-		n--;
+		count--;
 	}
-	free (line);
+	//free (line);
 	line = res;
 }
 
 char	*getcontent(int fd, char *line, char *buffer, size_t exit)
 {
+    size_t BUFFER_SIZE = 32;
+    size_t count;
+    
 	int	stay;
 	stay = 1;
 	while (stay > 0)
 	{
 		ft_bzero(buffer, BUFFER_SIZE + 1);
 		stay = read(fd, buffer, BUFFER_SIZE);
-		if (stay < 0)
-			return (NULL);
-		exit = 0;
-		while (exit < BUFFER_SIZE)
+		if (stay = -1)
+		{
+		    exit = 0;
+		    free (line);
+		    return (NULL);
+        }
+		count = 0;
+		while (count < stay)
 		{
 			
-			if (buffer[exit] == '\n')
+			if (buffer[count] == '\n')
 				break ;
-			exit++;
+			count++;
 		}
-		ft_getjoin(line, buffer, exit);
+		ft_getjoin(line, buffer, count);
 		if (!line)
 			return (NULL);
-		if (buffer[exit] == '\n')
+		if (buffer[count] == '\n')
 			break ;
 	}
 	return (line);
@@ -140,15 +154,22 @@ char	*getcontent(int fd, char *line, char *buffer, size_t exit)
 
 int	get_next_line(int fd, char **line)
 {
-	static char	buffer[BUFFER_SIZE];
+    size_t BUFFER_SIZE = 32;
+    
+	static char	buffer[32];
 	int			exit;
 	int			i;
 	int			c;
 	int			j;
 
 	exit = 1;
-
-
+    if (fd < 0)
+    {
+	    free (line);
+	    return (-1);
+    }
+    if (buffer[0] != '\0')
+    {
 		i = 0;
 		while (buffer[i] != '\n' && buffer[i])
 			i++;
@@ -161,16 +182,16 @@ int	get_next_line(int fd, char **line)
 		j = 0;
 		while (j < c)
 		{
-			*line[j] = buffer[j + i];
+			(*line)[j] = buffer[j + i];
 			j++;
 		}
 		j++;
 		if (buffer[j + i - 1] == '\n')
 			exit = 0;
+    }
 	
 	if (exit > 0)
 		*line = getcontent(fd, *line, buffer, exit);
-	*line = *line;
 	return (ft_strlen(*line));
 }
 
@@ -185,7 +206,7 @@ int	get_next_line(int fd, char **line)
 //
 //	exit = 1;
 //	if (!buffer)
-//		buffer = ft_calloc(BUFFER_SIZE + 1, sizeof(char));
+//		buffer = ft_calloc(BUFFER_SIZE + 1, sizeof(char));a
 //	else
 //	{
 //		i = 0;
@@ -237,7 +258,8 @@ int main(void)
 {
 	int fd;
 	fd = open("test", O_RDWR | O_CREAT |O_APPEND, S_IRUSR | S_IWUSR);
-	char *str;
+	char **str;
+	str = ft_calloc(sizeof(str), 2);
 // size_t		BUFFER_SIZE = 32;//comment this out before compiling
 //	ft_putendl_fd("                  /´¯/)         ", fd);
 //	ft_putendl_fd("                ,/¯  /          ", fd);
@@ -252,8 +274,8 @@ int main(void)
 //	ft_putendl_fd("", fd);
 	for (int i = 0; i < 10; i++)
 	{
-		get_next_line(fd, &str);
-		printf("%d %s\n",(i + 1), str);
+		get_next_line(fd, str);
+		printf("%d %s\n",(i + 1), *str);
 	}
 	close(fd);
 }
