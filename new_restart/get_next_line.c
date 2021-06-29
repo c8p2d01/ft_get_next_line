@@ -41,10 +41,13 @@ void	ft_bzero(void *s, size_t n)
 	size_t	i;
 
 	i = 0;
-	while (i < n)
+	if ((unsigned char *)s != NULL)
 	{
-		((char *)s)[i] = '\0';
-		i++;
+    	while (i < n)
+    	{
+    		((unsigned char *)s)[i] = '\0';
+    		i++;
+    	}
 	}
 }
 
@@ -84,55 +87,33 @@ void	*ft_memcpy(void *dest, const void *src, size_t n)
 	size_t	i;
 
 	i = 0;
-	while (i < n)
+	if (!(!src))
 	{
-		((unsigned char *)dest)[i] = ((unsigned char *)src)[i];
-		i++;
+		while (i < n)
+		{
+			((unsigned char *)dest)[i] = ((unsigned char *)src)[i];
+			i++;
+		}
 	}
 	return (dest);
 }
 
-// copy n bytes from src to dest and return dest while protecting against
-// overlapping memory of src and dest
-void	*ft_memmove(void *dest, const void *src, size_t n)
+// overwrite the already read part with the remaining buffer
+char	*ft_overwrite(char *buff, size_t offset)
 {
-	size_t tn;
+	char	temp[BUFFER_SIZE + 1];
+	size_t  i;
 
-	tn = n;
-	if (!dest || !src)
-		return (NULL);
-	if ((size_t)src > (size_t)dest)
-		ft_memcpy(dest, src, n);
-	else
-	{
-		while (n--)
-			((unsigned char *)dest)[n] = ((unsigned char *)src)[n];
-	}
-	while (tn < BUFFER_SIZE)
-	{
-		((unsigned char *)dest)[tn] = '\0';
-		tn++;
-	}
-	return (dest);
-}
-
-// copy size byttes from src to dest, overwriting dest
-size_t	ft_strlcpy(char *dst, const char *src, size_t size)
-{
-	size_t	i;
-
+    ft_bzero(temp, BUFFER_SIZE + 1);
+	ft_memcpy(temp, &buff[offset], BUFFER_SIZE - offset);
 	i = 0;
-	if (!src)
-	    return (0);
-	while (src[i] && (i + 1) < size && src[i] != '\n')
+	while (i < BUFFER_SIZE)
 	{
-		if (!(size == 0))
-			dst[i] = src[i];
-		i++;
+	    buff[i] = '\0';
+        i -= -1;
 	}
-	if (!(size == 0))
-		dst[i] = '\0';
-	return (ft_strlen((char *)src));
+	ft_memcpy(buff, temp, BUFFER_SIZE - offset);
+	return (buff);
 }
 
 // concatenate two strings into one new string
@@ -149,10 +130,10 @@ char	*ft_strjoin(char const *s1, char const *s2)
 	res = malloc(total_length + 1);
 	if (res == NULL)
 		return (NULL);
-	ft_strlcpy(res, s1, length_dst + 1);
-	ft_strlcpy(&res[(length_dst)], s2, length_src + 1);
+	ft_memcpy(res, s1, length_dst + 1);
+	ft_memcpy(&res[(length_dst)], s2, length_src + 1);
 	if (length_src < BUFFER_SIZE)
-		ft_memmove((char *)s2, (s2 + length_src + 1), (BUFFER_SIZE - length_src + 1));
+		ft_overwrite((char *)s2, (length_src + 1));
 	return (res);
 }
 
@@ -178,13 +159,19 @@ char	*ft_substr(char const *s, unsigned int start, size_t len)
 
 int	get_next_line(int fd, char **line)
 {
-	static char	*buffer;
+	static char	buffer[BUFFER_SIZE + 1];
 	int			nread;
 
 	nread = BUFFER_SIZE + 1;
-	//*line = ft_calloc(1, 1);
-	if (!buffer)
-		buffer = ft_calloc(BUFFER_SIZE + 1, sizeof(char));
+	if (!buffer[0])
+	{
+		ft_bzero(buffer, BUFFER_SIZE + 1);
+		nread = read(fd, buffer, BUFFER_SIZE);
+		if (nread == -1)
+			return (-1);
+	}
+	else
+	    nread = 1;
 	if (fd < 0)
 	{
 		free (line);
@@ -192,17 +179,11 @@ int	get_next_line(int fd, char **line)
 	}
 	while (nread > 0)
 	{
-	    if (nread != BUFFER_SIZE + 1)
-	        ft_bzero(buffer, BUFFER_SIZE + 1);
-		nread = read(fd, buffer, BUFFER_SIZE);
-		if (nread == -1)
-		{
-			free (line);
-			return (-1);
-		}
 		*line = ft_strjoin(*line, ft_substr(buffer, 0, ft_strlen(buffer)));
 		if (ft_strlen(buffer) != BUFFER_SIZE)
 			break ;
+		ft_bzero(buffer, BUFFER_SIZE + 1);
+		nread = read(fd, buffer, BUFFER_SIZE);
 	}
 	return (ft_strlen(buffer));
 }
@@ -242,12 +223,10 @@ int main(void)
 //	ft_putendl_fd("        \\              (        ", fd);
 //	ft_putendl_fd("          \\             \\       ", fd);
 //	ft_putendl_fd("", fd);
-
 	for (int i = 0; i < 10; i++)
 	{
 		get_next_line(fd, &str);
 		printf("%d %s\n",(i + 1), str);
-		free (str);
 	}
 	close(fd);
 }
