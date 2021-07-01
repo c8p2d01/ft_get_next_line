@@ -102,39 +102,12 @@ void	*ft_memcpy(void *dest, const void *src, size_t n)
 char	*ft_overwrite(char *buff, size_t offset)
 {
 	char	temp[BUFFER_SIZE + 1];
-	size_t  i;
 
     ft_bzero(temp, BUFFER_SIZE + 1);
 	ft_memcpy(temp, &buff[offset], BUFFER_SIZE - offset);
-	i = 0;
-	while (i < BUFFER_SIZE)
-	{
-	    buff[i] = '\0';
-        i -= -1;
-	}
+	ft_bzero(buff, BUFFER_SIZE);
 	ft_memcpy(buff, temp, BUFFER_SIZE - offset);
 	return (buff);
-}
-
-// concatenate two strings into one new string
-char	*ft_strjoin(char const *s1, char const *s2)
-{
-	size_t	total_length;
-	size_t	length_dst;
-	size_t	length_src;
-	char	*res;
-
-	length_dst = ft_strlen((char *)s1);
-	length_src = ft_strlen((char *)s2);
-	total_length = length_src + length_dst;
-	res = malloc(total_length + 1);
-	if (res == NULL)
-		return (NULL);
-	ft_memcpy(res, s1, length_dst + 1);
-	ft_memcpy(&res[(length_dst)], s2, length_src + 1);
-	if (length_src < BUFFER_SIZE)
-		ft_overwrite((char *)s2, (length_src + 1));
-	return (res);
 }
 
 char	*ft_substr(char const *s, unsigned int start, size_t len)
@@ -157,6 +130,29 @@ char	*ft_substr(char const *s, unsigned int start, size_t len)
 	return (res);
 }
 
+// concatenate two strings into one new string
+char	*ft_strjoin(char *s1, char const *s2)
+{
+	size_t	total_length;
+	size_t	length_dst;
+	size_t	length_src;
+	char	*res;
+
+	length_dst = ft_strlen((char *)s1);
+	length_src = ft_strlen((char *)s2);
+	total_length = length_src + length_dst;
+	res = malloc(total_length + 1);
+	if (res == NULL)
+		return (NULL);
+	ft_memcpy(res, s1, length_dst + 1);
+	ft_memcpy(&res[(length_dst)], s2, length_src + 1);
+	if (length_src < BUFFER_SIZE)
+		ft_overwrite((char *)s2, (length_src + 1));
+	if (s1[0])
+		free(s1);
+	return (res);
+}
+
 int	get_next_line(int fd, char **line)
 {
 	static char	buffer[BUFFER_SIZE + 1];
@@ -167,25 +163,21 @@ int	get_next_line(int fd, char **line)
 	{
 		ft_bzero(buffer, BUFFER_SIZE + 1);
 		nread = read(fd, buffer, BUFFER_SIZE);
-		if (nread == -1)
-			return (-1);
 	}
-	else
-	    nread = 1;
-	if (fd < 0)
+	if (fd < 0 || nread == -1)
 	{
-		free (line);
+		*line = NULL;
 		return (-1);
 	}
-	while (nread > 0)
+	while (nread == BUFFER_SIZE)
 	{
 		*line = ft_strjoin(*line, ft_substr(buffer, 0, ft_strlen(buffer)));
-		if (ft_strlen(buffer) != BUFFER_SIZE)
-			break ;
 		ft_bzero(buffer, BUFFER_SIZE + 1);
 		nread = read(fd, buffer, BUFFER_SIZE);
+		if (nread % BUFFER_SIZE != 0)
+			break ;
 	}
-	return (ft_strlen(buffer));
+	return (nread);
 }
 
 void	ft_putchar_fd(char c, int fd)
@@ -223,10 +215,9 @@ int main(void)
 //	ft_putendl_fd("        \\              (        ", fd);
 //	ft_putendl_fd("          \\             \\       ", fd);
 //	ft_putendl_fd("", fd);
-	for (int i = 0; i < 10; i++)
+	while (get_next_line(fd, &str))
 	{
-		get_next_line(fd, &str);
-		printf("%d %s\n",(i + 1), str);
+		printf("%s\n", str);
 	}
 	close(fd);
 }
