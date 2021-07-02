@@ -137,7 +137,7 @@ char	*ft_strdup(const char *src)
 	char	*dst;
 
 	len = ft_strlen((char *)src) + 1;
-	dst = malloc((len) + 1);
+	dst = ft_calloc((len) + 1, 1);
 	if (dst == NULL)
 		return (NULL);
 	ft_memcpy(dst, src, len);
@@ -148,13 +148,13 @@ char	*ft_stepbuffer(char *prev, size_t i, size_t offset)
 {
 	char	*new;
 
-    	printf("%s\t", &prev[offset]);
+		printf("%s\t", &prev[offset]);
 	new = ft_calloc(((i + 1) * BUFFER_SIZE) + 1, 1);
 	if (new == NULL)
 		return (NULL);
 	if (prev)
 	{
-	   	printf("%s\t", &prev[offset]);
+		printf("%s\t", &prev[offset]);
 		ft_strncpy(new, &prev[offset], BUFFER_SIZE);
 	}
 	printf("%s\t", new);
