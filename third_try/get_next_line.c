@@ -65,15 +65,135 @@ size_t ft_strlen(char *s)
 	return (i);
 }
 
-char	*ft_stepbuffer(char *s, size_t i)
+//return a pointer to the first instance of c in str
+char	*ft_strchr(const char *str, int c)
 {
-	char	*dest;
+	int				i;
+	unsigned char	*f;
 
-	dest = ft_calloc(ft_strlen((char *)s) + 1 + (i * BUFFER_SIZE), 1);
-	if (dest == NULL)
-		return (NULL);
-	ft_strlcpy(dest, s, ft_strlen((char *)s) + 1);
+	f = (unsigned char *)str;
+	i = 0;
+	while (f[i])
+	{
+		if (f[i] == c)
+			return ((char *)(f + i));
+		i++;
+	}
+	if (f[i] == c)
+		return ((char *)(f + i));
+	return (NULL);
+}
+
+void	*ft_memcpy(void *dest, const void *src, size_t n)
+{
+	size_t	i;
+
+	i = 0;
+	while (i < n)
+	{
+		((unsigned char *)dest)[i] = ((unsigned char *)src)[i];
+		i++;
+	}
 	return (dest);
+}
+
+size_t	ft_strncpy(char *dst, const char *src, size_t size)
+{
+	size_t	i;
+
+	i = 0;
+	while (src[i] && i < size)
+	{
+		dst[i] = src[i];
+	//	printf("%c\t%c\n", src[i], dst[i]);
+		i++;
+	}
+	return (ft_strlen((char *)src));
+}
+
+char	*ft_substr(char const *s, unsigned int start, size_t len)
+{
+	char	*res;
+	size_t	lsub;
+
+	if (!s)
+		return (0);
+	if ((unsigned int)ft_strlen((char *)s) <= start)
+		return (ft_calloc(1, 1));
+	else if ((size_t)((int)ft_strlen((char *)s) - start) > len)
+		lsub = len;
+	else
+		lsub = (size_t)((int)ft_strlen((char *)s) - start);
+	res = ft_calloc(lsub + 1, 1);
+	if (!res)
+		return (NULL);
+	ft_memcpy(res, &s[start], len);
+	return (res);
+}
+
+char	*ft_strdup(const char *src)
+{
+	size_t	len;
+	char	*dst;
+
+	len = ft_strlen((char *)src) + 1;
+	dst = malloc((len) + 1);
+	if (dst == NULL)
+		return (NULL);
+	ft_memcpy(dst, src, len);
+	return (dst);
+}
+
+char	*ft_stepbuffer(char *prev, size_t i, size_t offset)
+{
+	char	*new;
+
+    	printf("%s\t", &prev[offset]);
+	new = ft_calloc(((i + 1) * BUFFER_SIZE) + 1, 1);
+	if (new == NULL)
+		return (NULL);
+	if (prev)
+	{
+	   	printf("%s\t", &prev[offset]);
+		ft_strncpy(new, &prev[offset], BUFFER_SIZE);
+	}
+	printf("%s\t", new);
+	return (new);
+}
+
+int	rvalue(char *buffer,char **line, int nread,int fd)
+{
+	int		i;
+	char	*tmp;
+
+	i = 0;
+	if(fd < 0 || nread == -1)
+		return (-1);
+	if(nread == 0 && buffer == NULL)
+	{
+		*line = ft_calloc(1, 1);
+		return (0);
+	}
+	else
+	{
+		while (buffer[i] && buffer[i] != '\n')
+			i++;
+		if (buffer[i] == '\n')
+		{
+			*line = ft_substr(buffer, 0, i);
+			tmp = ft_stepbuffer(buffer, 0, i);
+			if (buffer != NULL)
+				free(buffer);
+			buffer = ft_strdup(tmp);
+			free (tmp);
+			return (ft_strlen(*line));
+		}
+		else
+		{
+			*line = ft_strdup(buffer);
+			return (0);
+		}
+	}
 }
 
 int get_next_line(int fd, char **line)
@@ -85,15 +205,21 @@ int get_next_line(int fd, char **line)
 
 	nread = 1;
 	i = 0;
+	if (!buffer)
+      buffer = ft_calloc(BUFFER_SIZE, sizeof(char));
 	while (nread)
 	{
-		temp = ft_stepbuffer(buffer, i);
-		free(buffer);
-		buffer = temp;
+		temp = ft_stepbuffer(buffer, i, 0);
+		if (buffer)
+			free(buffer);
+		buffer = ft_strdup(temp);
+		free (temp);
 		nread = read(fd, &buffer[(BUFFER_SIZE * i)], BUFFER_SIZE);
-		if
+		if (ft_strchr(buffer, '\n'))
+			break ;
+		i++;
 	}
-	return (ft_linelen(*line));
+	return (rvalue(buffer, line, nread, fd));
 }
 
 int main(void)
