@@ -169,7 +169,7 @@ int main(void)
 	char *str;
 	while (get_next_line(fd, &str))
 	{
-		printf("%s\n", endreplace(str));
+		printf("%s\n", str);
 	}
 	close(fd);
 }
