@@ -6,7 +6,7 @@
 /*   By: clems <clems@student.42.fr>                +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/04 15:53:45 by clems             #+#    #+#             */
-/*   Updated: 2021/07/05 15:06:34 by clems            ###   ########.fr       */
+/*   Updated: 2021/06/07 18:08:05 by clems            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -97,17 +97,19 @@ void	*ft_memcpy(void *dest, const void *src, size_t n)
 	return (dest);
 }
 
-size_t	ft_strncpy(char *dst, const char *src, size_t size)
+size_t	ft_strlcpy(char *dst, const char *src, size_t size)
 {
 	size_t	i;
 
 	i = 0;
-	while (src[i] && i < size)
+	while (src[i] && (i + 1) < size)
 	{
-		dst[i] = src[i];
-	//	printf("%c\t%c\n", src[i], dst[i]);
+		if (!(size == 0))
+			dst[i] = src[i];
 		i++;
 	}
+	if (!(size == 0))
+		dst[i] = '\0';
 	return (ft_strlen((char *)src));
 }
 
@@ -137,28 +139,11 @@ char	*ft_strdup(const char *src)
 	char	*dst;
 
 	len = ft_strlen((char *)src) + 1;
-	dst = ft_calloc((len) + 1, 1);
+	dst = malloc((len) + 1);
 	if (dst == NULL)
 		return (NULL);
 	ft_memcpy(dst, src, len);
 	return (dst);
-}
-
-char	*ft_stepbuffer(char *prev, size_t i, size_t offset)
-{
-	char	*new;
-
-		printf("%s\t", &prev[offset]);
-	new = ft_calloc(((i + 1) * BUFFER_SIZE) + 1, 1);
-	if (new == NULL)
-		return (NULL);
-	if (prev)
-	{
-		printf("%s\t", &prev[offset]);
-		ft_strncpy(new, &prev[offset], BUFFER_SIZE);
-	}
-	printf("%s\t", new);
-	return (new);
 }
 
 int	rvalue(char *buffer,char **line, int nread,int fd)
@@ -181,11 +166,10 @@ int	rvalue(char *buffer,char **line, int nread,int fd)
 		if (buffer[i] == '\n')
 		{
 			*line = ft_substr(buffer, 0, i);
-			tmp = ft_stepbuffer(buffer, 0, i);
-			if (buffer != NULL)
-				free(buffer);
-			buffer = ft_strdup(tmp);
-			free (tmp);
+			tmp = ft_strdup(&buffer[i + 1]);
+			if (buffer)
+			    free (buffer);
+			buffer = tmp;
 			return (ft_strlen(*line));
 		}
 		else
@@ -194,6 +178,18 @@ int	rvalue(char *buffer,char **line, int nread,int fd)
 			return (0);
 		}
 	}
+}
+
+char	*ft_stepbuffer(char *pbuffer, size_t i)
+{
+	char	*nbuffer;
+
+	nbuffer = ft_calloc(((i + 1) * BUFFER_SIZE) + 1, 1);
+	if (nbuffer == NULL)
+		return (NULL);
+	if (pbuffer)
+		ft_strlcpy(nbuffer, pbuffer, ft_strlen((char *)pbuffer) + 1);
+	return (nbuffer);
 }
 
 int get_next_line(int fd, char **line)
@@ -205,16 +201,12 @@ int get_next_line(int fd, char **line)
 
 	nread = 1;
 	i = 0;
-	if (!buffer)
-      buffer = ft_calloc(BUFFER_SIZE + 1, sizeof(char));
 	while (nread)
 	{
-		temp = ft_stepbuffer(buffer, i, 0);
+		temp = ft_stepbuffer(buffer, i);
 		if (buffer)
 			free(buffer);
-		buffer = ft_strdup(temp);
-		free (temp);
-		temp = NULL;
+		buffer = temp;
 		nread = read(fd, &buffer[(BUFFER_SIZE * i)], BUFFER_SIZE);
 		if (ft_strchr(buffer, '\n'))
 			break ;
