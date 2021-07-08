@@ -25,7 +25,7 @@
 //	read() starts where the last read() ended
 
 #ifndef BUFFER_SIZE
-#define BUFFER_SIZE 31
+#define BUFFER_SIZE 15
 #endif
 
 #include <stdio.h>
@@ -60,30 +60,10 @@ size_t ft_sublen(char *s)
 	return (i);
 }
 
-// copy size bytes from src to dest, overwriting dest
-size_t	ft_strlcpy(char *dst, const char *src, size_t size)
-{
-	size_t	i;
-
-	i = 0;
-	if (src && dst)
-	{
-	while (src[i] && (i + 1) < size)
-	{
-		if (!(size == 0))
-			dst[i] = src[i];
-		i++;
-	}
-	if (!(size == 0))
-		dst[i] = '\0';
-	}
-	return (ft_strlen((char *)src));
-}
-
 // allocate memory that consists only of '\0' bytes
-void *ft_calloc(size_t nmemb, size_t n)
+char *ft_calloc(size_t nmemb, size_t n)
 {
-	void *dest;
+	char *dest;
 	size_t i;
 
 	dest = malloc(nmemb * n);
@@ -116,16 +96,19 @@ void *ft_memcpy(void *dest, const void *src, size_t n)
 	return (dest);
 }
 
-// sets n bytes of "s" to the value '\0'
-void	ft_bzero(void *s, size_t n)
+// copy n bytes from src to dest and return dest while protecting against
+// overlapping memory of src and dest
+void	ft_memmove(void *dest, const void *src, size_t n)
 {
-	size_t	i;
-
-	i = 0;
-	while (i < n)
+	if (!(!dest || !src))
 	{
-		((char *)s)[i] = '\0';
-		i++;
+    	if ((size_t)src > (size_t)dest)
+    		ft_memcpy(dest, src, n);
+    	else
+    	{
+    		while (n--)
+    			((unsigned char *)dest)[n] = ((unsigned char *)src)[n];
+    	}
 	}
 }
 
@@ -143,18 +126,6 @@ char *ft_strchr(const char *s, int c)
 	if (s[i] == c)
 		return ((char *)&s[i]);
 	return (NULL);
-}
-
-// create a duplicate string of s
-char	*ft_strdup(const char *s, size_t extramem)
-{
-	char	*dest;
-
-	dest = ft_calloc(ft_strlen((char *)s) + extramem + 1, 1);
-	if (dest == NULL)
-		return (NULL);
-	ft_strlcpy(dest, s, ft_strlen((char *)s) + 1);
-	return (dest);
 }
 
 char	*ft_substr(char const *s, unsigned int start, size_t len)
@@ -177,41 +148,68 @@ char	*ft_substr(char const *s, unsigned int start, size_t len)
 	return (res);
 }
 
+// concatenate two strings into one new string
+char	*ft_strjoin(char **s1, char const *s2)
+{
+	size_t	total_length;
+	size_t	length_dst;
+	size_t	length_src;
+	char	*temps;
 
+	temps = ft_substr(*s1, 0, ft_strlen(*s1));
+	length_dst = ft_strlen((char *)temps);
+	length_src = ft_strlen((char *)s2);
+	total_length = length_src + length_dst + 1;
+	free (*s1);
+	*s1 = ft_calloc(total_length, sizeof(char));
+	if (s1 == NULL)
+		return (NULL);
+	ft_memcpy(*s1, temps, length_dst + 1);
+	ft_memcpy(&(*s1)[(length_dst)], s2, length_src + 1);
+	return (*s1);
+}
 
 char *get_next_line(int fd)
 {
-	static char *buffer;
+	static char buffer[BUFFER_SIZE + 1];
 	char *line;
-	char *tmp;
+	char *b_temp;
 	int r;
 
 	r = BUFFER_SIZE;
-	while (r == BUFFER_SIZE)
+	line = ft_calloc(sizeof(line),1);
+	while (r == BUFFER_SIZE || ft_strlen(buffer))
 	{
-		buffer = ft_strdup(buffer, BUFFER_SIZE);
-		if (ft_strchr(buffer, '\n'))
-			break ;
-		r = read(fd, &buffer[ft_strlen(buffer)], BUFFER_SIZE);
-		if ((r == 0 && ft_strlen(buffer) == 0) || r == - 1|| fd < 0)
-		    return (NULL);
-		if (ft_strchr(buffer, '\n') || (r == 0 && ft_strlen(buffer) != 0))
-			break ;
+		if (buffer[0])
+		{
+		    b_temp = ft_substr(buffer, 0, ft_sublen(buffer));
+		    line = ft_strjoin(&line, b_temp);
+            free (b_temp);
+		    if (ft_strchr(buffer, '\n'))
+            {
+                ft_memmove(buffer, ft_strchr(buffer, '\n') + 1, BUFFER_SIZE - ft_sublen(buffer));
+                break ;
+            }
+		}
+		r = read(fd, buffer, BUFFER_SIZE);
+        if (r == -1 || fd < 0 || (r == 0 && ft_strlen(buffer) == 0))
+            return (NULL);
+        buffer[r] = '\0';
 	}
-	line = ft_substr(buffer, 0, ft_sublen(buffer));
-    if (r == BUFFER_SIZE)
+	return (ft_strjoin(&line, "\n"));
+}
+
+// sets n bytes of "s" to the value '\0'
+void	ft_bzero(void *s, size_t n)
+{
+	size_t	i;
+
+	i = 0;
+	while (i < n)
 	{
-	    tmp = ft_strdup(ft_strchr(buffer, '\n') + 1, 0);
-	    ft_bzero(buffer, ft_strlen(buffer));
-	    free (buffer);
-    	buffer = ft_strdup(tmp, 0);
-    	ft_bzero(tmp, ft_strlen(tmp));
-    	if (tmp)
-    	    free (tmp);
+		((char *)s)[i] = '\0';
+		i++;
 	}
-	if ((r == 0) && (ft_strlen(buffer) != 0))
-	    free (buffer);
-	return (line);
 }
 
 int main(void)
@@ -224,7 +222,7 @@ int main(void)
 		str = get_next_line(fd);
 		if (str != NULL)
 		{
-		    printf("%s\n", str);
+		    printf("%s", str);
 		    ft_bzero(str, ft_strlen(str));
 		    free (str);
 		}
