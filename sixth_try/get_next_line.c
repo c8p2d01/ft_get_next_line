@@ -6,7 +6,7 @@
 /*   By: clems <clems@student.42.fr>                +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/04 15:53:45 by clems             #+#    #+#             */
-/*   Updated: 2021/07/06 15:49:26 by clems            ###   ########.fr       */
+/*   Updated: 2021/07/09 13:56:32 by clems            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,7 +25,7 @@
 //	read() starts where the last read() ended
 
 #ifndef BUFFER_SIZE
-#define BUFFER_SIZE 15
+#define BUFFER_SIZE 250
 #endif
 
 #include <stdio.h>
@@ -128,6 +128,14 @@ char *ft_strchr(const char *s, int c)
 	return (NULL);
 }
 
+// Notes to make this more understandable:
+// we need to allocate emmory for a portion of the string starting at start
+// the length is given but first a few checks
+// 1	if there is no soulce return NULL
+// 2	if the start is outside the string, return an empty string
+// 3	if the remaining length after start is smaller than len, continue
+// else	make the leen-sub to the longes remaining possible
+// then allocate and copy over
 char	*ft_substr(char const *s, unsigned int start, size_t len)
 {
 	char	*res;
@@ -144,12 +152,12 @@ char	*ft_substr(char const *s, unsigned int start, size_t len)
 	res = ft_calloc(lsub + 1, 1);
 	if (!res)
 		return (NULL);
-	ft_memcpy(res, &s[start], len);
+	ft_memcpy(res, &s[start], lsub);
 	return (res);
 }
 
-// concatenate two strings into one new string
-char	*ft_strjoin(char **s1, char const *s2)
+// concatenate two strings into one new string, replacing the first one
+char	*ft_getjoin(char **s1, char const *s2)
 {
 	size_t	total_length;
 	size_t	length_dst;
@@ -158,33 +166,32 @@ char	*ft_strjoin(char **s1, char const *s2)
 
 	temps = ft_substr(*s1, 0, ft_strlen(*s1));
 	length_dst = ft_strlen((char *)temps);
-	length_src = ft_strlen((char *)s2);
+	length_src = ft_sublen((char *)s2);
 	total_length = length_src + length_dst + 1;
 	free (*s1);
+	*s1 = NULL;
 	*s1 = ft_calloc(total_length, sizeof(char));
 	if (s1 == NULL)
 		return (NULL);
 	ft_memcpy(*s1, temps, length_dst + 1);
-	ft_memcpy(&(*s1)[(length_dst)], s2, length_src + 1);
+	ft_memcpy(&(*s1)[(length_dst)], s2, length_src);
 	return (*s1);
 }
 
 char *get_next_line(int fd)
 {
 	static char buffer[BUFFER_SIZE + 1];
-	char *line;
-	char *b_temp;
+	char **line;
 	int r;
 
 	r = BUFFER_SIZE;
-	line = ft_calloc(sizeof(line),1);
+	line = (char **)ft_calloc(sizeof(**line),1);printf("%s\n\n\t", *line);
+	*line = ft_calloc(sizeof(*line),1);
 	while (r == BUFFER_SIZE || ft_strlen(buffer))
 	{
 		if (buffer[0])
 		{
-		    b_temp = ft_substr(buffer, 0, ft_sublen(buffer));
-		    line = ft_strjoin(&line, b_temp);
-            free (b_temp);
+		    *line = ft_getjoin(line, buffer);
 		    if (ft_strchr(buffer, '\n'))
             {
                 ft_memmove(buffer, ft_strchr(buffer, '\n') + 1, BUFFER_SIZE - ft_sublen(buffer));
@@ -192,11 +199,13 @@ char *get_next_line(int fd)
             }
 		}
 		r = read(fd, buffer, BUFFER_SIZE);
+		//printf("%s\t", buffer);
         if (r == -1 || fd < 0 || (r == 0 && ft_strlen(buffer) == 0))
             return (NULL);
         buffer[r] = '\0';
 	}
-	return (ft_strjoin(&line, "\n"));
+	
+	return (*line);
 }
 
 // sets n bytes of "s" to the value '\0'
@@ -217,14 +226,19 @@ int main(void)
 	int fd;
 	fd = open("test", O_RDWR | O_CREAT | O_APPEND, S_IRUSR | S_IWUSR);
 	char *str;
+	int i = 1;
+	printf("wubalabadubdub\n\n");
 	while (1 > 0)
 	{
 		str = get_next_line(fd);
 		if (str != NULL)
 		{
-		    printf("%s", str);
+			if (str[9] == '\0')
+				printf("wubalabadubdub\n\n");
+		    //printf("%d\t%s", i, str);
 		    ft_bzero(str, ft_strlen(str));
 		    free (str);
+			i++;
 		}
 		else
 			break;
