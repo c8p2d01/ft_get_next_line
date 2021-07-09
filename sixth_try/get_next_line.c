@@ -6,7 +6,7 @@
 /*   By: clems <clems@student.42.fr>                +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/06/04 15:53:45 by clems             #+#    #+#             */
-/*   Updated: 2021/07/09 13:56:32 by clems            ###   ########.fr       */
+/*   Updated: 2021/07/09 14:52:08 by clems            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -24,77 +24,7 @@
 //	Notes
 //	read() starts where the last read() ended
 
-#ifndef BUFFER_SIZE
-#define BUFFER_SIZE 250
-#endif
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-
-// return the length of the given string;
-size_t ft_strlen(char *s)
-{
-	size_t i;
-
-	i = 0;
-	if (!s)
-		return (0);
-	while (s[i] != '\0' && s[i])
-		i++;
-	return (i);
-}
-
-size_t ft_sublen(char *s)
-{
-	size_t i;
-
-	i = 0;
-	if (!s)
-		return (0);
-	while (s[i] != '\n' && s[i])
-		i++;
-	return (i);
-}
-
-// allocate memory that consists only of '\0' bytes
-char *ft_calloc(size_t nmemb, size_t n)
-{
-	char *dest;
-	size_t i;
-
-	dest = malloc(nmemb * n);
-	if (!dest)
-		return (0);
-	i = 0;
-	while (i < n)
-	{
-		((char *)dest)[i] = '\0';
-		i++;
-	}
-	return (dest);
-}
-
-void *ft_memcpy(void *dest, const void *src, size_t n)
-{
-	size_t i;
-
-	i = 0;
-	while (i < n)
-	{
-		((unsigned char *)dest)[i] = ((unsigned char *)src)[i];
-		i++;
-	}
-	while (i < BUFFER_SIZE)
-	{
-	    ((unsigned char *)dest)[i] = '\0';
-	    i++;
-	}
-	return (dest);
-}
+#include <get_next_line.h>
 
 // copy n bytes from src to dest and return dest while protecting against
 // overlapping memory of src and dest
@@ -102,21 +32,21 @@ void	ft_memmove(void *dest, const void *src, size_t n)
 {
 	if (!(!dest || !src))
 	{
-    	if ((size_t)src > (size_t)dest)
-    		ft_memcpy(dest, src, n);
-    	else
-    	{
-    		while (n--)
-    			((unsigned char *)dest)[n] = ((unsigned char *)src)[n];
-    	}
+		if ((size_t)src > (size_t)dest)
+			ft_memcpy(dest, src, n);
+		else
+		{
+			while (n--)
+				((unsigned char *)dest)[n] = ((unsigned char *)src)[n];
+		}
 	}
 }
 
 //return a pointer to the first instance of c in str
 // return NULL if the caharcter wasn't found ☺
-char *ft_strchr(const char *s, int c)
+char	*ft_strchr(const char *s, int c)
 {
-	size_t i;
+	size_t	i;
 
 	i = 0;
 	while (s[i] && s[i] != c)
@@ -168,7 +98,7 @@ char	*ft_getjoin(char **s1, char const *s2)
 	length_dst = ft_strlen((char *)temps);
 	length_src = ft_sublen((char *)s2);
 	total_length = length_src + length_dst + 1;
-	free (*s1);
+	free(*s1);
 	*s1 = NULL;
 	*s1 = ft_calloc(total_length, sizeof(char));
 	if (s1 == NULL)
@@ -178,70 +108,72 @@ char	*ft_getjoin(char **s1, char const *s2)
 	return (*s1);
 }
 
-char *get_next_line(int fd)
+char	*get_next_line(int fd)
 {
-	static char buffer[BUFFER_SIZE + 1];
-	char **line;
-	int r;
+	static char	buffer[BUFFER_SIZE + 1];
+	char		**line;
+	int			r;
 
 	r = BUFFER_SIZE;
-	line = (char **)ft_calloc(sizeof(**line),1);printf("%s\n\n\t", *line);
-	*line = ft_calloc(sizeof(*line),1);
+	line = (char **)ft_calloc(sizeof(**line), 1);
+	*line = ft_calloc(sizeof(*line), 1);
 	while (r == BUFFER_SIZE || ft_strlen(buffer))
 	{
 		if (buffer[0])
 		{
-		    *line = ft_getjoin(line, buffer);
-		    if (ft_strchr(buffer, '\n'))
-            {
-                ft_memmove(buffer, ft_strchr(buffer, '\n') + 1, BUFFER_SIZE - ft_sublen(buffer));
-                break ;
-            }
+			*line = ft_getjoin(line, buffer);
+			if (ft_strchr(buffer, '\n'))
+			{
+				ft_memmove(buffer, ft_strchr(buffer, '\n') + 1, \
+											BUFFER_SIZE - ft_sublen(buffer));
+				break ;
+			}
 		}
 		r = read(fd, buffer, BUFFER_SIZE);
-		//printf("%s\t", buffer);
-        if (r == -1 || fd < 0 || (r == 0 && ft_strlen(buffer) == 0))
-            return (NULL);
-        buffer[r] = '\0';
+		if (r == -1 || fd < 0 || (r == 0 && ft_strlen(buffer) == 0))
+			return (NULL);
+		buffer[r] = '\0';
 	}
-	
 	return (*line);
 }
-
-// sets n bytes of "s" to the value '\0'
-void	ft_bzero(void *s, size_t n)
-{
-	size_t	i;
-
-	i = 0;
-	while (i < n)
-	{
-		((char *)s)[i] = '\0';
-		i++;
-	}
-}
-
-int main(void)
-{
-	int fd;
-	fd = open("test", O_RDWR | O_CREAT | O_APPEND, S_IRUSR | S_IWUSR);
-	char *str;
-	int i = 1;
-	printf("wubalabadubdub\n\n");
-	while (1 > 0)
-	{
-		str = get_next_line(fd);
-		if (str != NULL)
-		{
-			if (str[9] == '\0')
-				printf("wubalabadubdub\n\n");
-		    //printf("%d\t%s", i, str);
-		    ft_bzero(str, ft_strlen(str));
-		    free (str);
-			i++;
-		}
-		else
-			break;
-	}
-	close(fd);
-}
+//#ifndef BUFFER_SIZE
+//# define BUFFER_SIZE 32
+//#endif
+//
+//#include <stdio.h>
+//#include <stdlib.h>
+//#include <unistd.h>
+//#include <sys/types.h>
+//#include <sys/stat.h>
+//#include <fcntl.h>
+//
+//// sets n bytes of "s" to the value '\0'
+//void	ft_bzero(void *s, size_t n)
+//{
+//	size_t	i;
+//
+//	i = 0;
+//	while (i < n)
+//	{
+//		((char *)s)[i] = '\0';
+//		i++;
+//	}
+//}
+//
+//#define FILENAME "test"
+//
+//int    main (void)
+//{
+//    FILE    *fp = fopen(FILENAME, "r");
+//    int        fd = fileno(fp);
+//    printf("%d\n", fd);
+//    int        x;
+//
+//    x = 8;
+//    while (x > 0)
+//    {
+//        printf("%d : %s\n", x, get_next_line(fd));
+//        x--;
+//    }
+//    return (x);
+//}
