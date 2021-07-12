@@ -24,7 +24,7 @@
 //	Notes
 //	read() starts where the last read() ended
 
-#include <get_next_line.h>
+#include "get_next_line.h"
 
 // copy n bytes from src to dest and return dest while protecting against
 // overlapping memory of src and dest
@@ -58,53 +58,41 @@ char	*ft_strchr(const char *s, int c)
 	return (NULL);
 }
 
-// Notes to make this more understandable:
-// we need to allocate emmory for a portion of the string starting at start
-// the length is given but first a few checks
-// 1	if there is no soulce return NULL
-// 2	if the start is outside the string, return an empty string
-// 3	if the remaining length after start is smaller than len, continue
-// else	make the leen-sub to the longes remaining possible
-// then allocate and copy over
-char	*ft_substr(char const *s, unsigned int start, size_t len)
+// sets n bytes of "s" to the value '\0'
+void	ft_bzero(void *s, size_t n)
 {
-	char	*res;
-	size_t	lsub;
+	size_t	i;
 
-	if (!s)
-		return (0);
-	if ((unsigned int)ft_strlen((char *)s) <= start)
-		return (ft_calloc(1, 1));
-	else if ((size_t)((int)ft_strlen((char *)s) - start) > len)
-		lsub = len;
-	else
-		lsub = (size_t)((int)ft_strlen((char *)s) - start);
-	res = ft_calloc(lsub + 1, 1);
-	if (!res)
-		return (NULL);
-	ft_memcpy(res, &s[start], lsub);
-	return (res);
+	i = 0;
+	while (i < n)
+	{
+		((char *)s)[i] = '\0';
+		i++;
+	}
 }
 
 // concatenate two strings into one new string, replacing the first one
-char	*ft_getjoin(char **s1, char const *s2)
+char	*ft_getjoin(char **s1, char const *s2, int end)
 {
 	size_t	total_length;
 	size_t	length_dst;
 	size_t	length_src;
 	char	*temps;
 
-	temps = ft_substr(*s1, 0, ft_strlen(*s1));
+	temps = ft_calloc(ft_strlen(*s1) + 1, 1);
+	ft_memmove(temps, *s1, ft_strlen(*s1));
 	length_dst = ft_strlen((char *)temps);
 	length_src = ft_sublen((char *)s2);
-	total_length = length_src + length_dst + 1;
+	total_length = length_src + length_dst + 1 + end;
+	ft_bzero(*s1, ft_strlen(*s1));
 	free(*s1);
-	*s1 = NULL;
-	*s1 = ft_calloc(total_length, sizeof(char));
+	*s1 = ft_calloc(total_length, 1);
 	if (s1 == NULL)
 		return (NULL);
 	ft_memcpy(*s1, temps, length_dst + 1);
 	ft_memcpy(&(*s1)[(length_dst)], s2, length_src);
+	if (end)
+		(*s1)[length_dst + length_src] = '\n';
 	return (*s1);
 }
 
@@ -121,45 +109,33 @@ char	*get_next_line(int fd)
 	{
 		if (buffer[0])
 		{
-			*line = ft_getjoin(line, buffer);
-			if (ft_strchr(buffer, '\n'))
+			*line = ft_getjoin(line, buffer, 0);
+			if (ft_sublen(buffer) != BUFFER_SIZE)
 			{
-				ft_memmove(buffer, ft_strchr(buffer, '\n') + 1, \
-											BUFFER_SIZE - ft_sublen(buffer));
+				r = ft_sublen(buffer);
+				ft_memmove(buffer, &buffer[r], ft_strlen(&buffer[r]));
+				ft_bzero(&buffer[r], BUFFER_SIZE - r);
 				break ;
 			}
 		}
-		r = read(fd, buffer, BUFFER_SIZE);
-		if (r == -1 || fd < 0 || (r == 0 && ft_strlen(buffer) == 0))
+		r = read(fd, &buffer[0], BUFFER_SIZE);
+		if (r <= -1 || fd < 0 || (r == 0 && ft_strlen(buffer) == 0))
 			return (NULL);
 		buffer[r] = '\0';
 	}
-	return (*line);
+	return (ft_getjoin(line, "\n", 1));
 }
 //#ifndef BUFFER_SIZE
 //# define BUFFER_SIZE 32
 //#endif
-//
-//#include <stdio.h>
-//#include <stdlib.h>
+
 //#include <unistd.h>
 //#include <sys/types.h>
 //#include <sys/stat.h>
 //#include <fcntl.h>
-//
-//// sets n bytes of "s" to the value '\0'
-//void	ft_bzero(void *s, size_t n)
-//{
-//	size_t	i;
-//
-//	i = 0;
-//	while (i < n)
-//	{
-//		((char *)s)[i] = '\0';
-//		i++;
-//	}
-//}
-//
+//#include <stdio.h>
+//#include <stdlib.h>
+
 //#define FILENAME "test"
 //
 //int    main (void)
@@ -169,10 +145,13 @@ char	*get_next_line(int fd)
 //    printf("%d\n", fd);
 //    int        x;
 //
-//    x = 8;
+//	char *str;
+//
+//    x = 9;
 //    while (x > 0)
 //    {
-//        printf("%d : %s\n", x, get_next_line(fd));
+//		str = get_next_line(fd);
+//		write(1, str, ft_strlen(str) + 2);
 //        x--;
 //    }
 //    return (x);
