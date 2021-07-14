@@ -1,0 +1,27 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+int main(void)
+{
+	int fd;
+	fd = open("test", O_RDWR | O_CREAT | O_APPEND, S_IRUSR | S_IWUSR);
+	char *str;
+	int a = 0;
+	while (a < 10)
+	{
+		str = get_next_line(fd);
+		if (str != NULL)
+		{
+		    printf("%s", str);
+		    ft_bzero(str, ft_strlen(str));
+		    free (str);
+		}
+		else
+			break;
+		a++;
+	}
+	close(fd);
+}

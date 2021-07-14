@@ -203,18 +203,7 @@ int main(void)
 	int fd;
 	fd = open("test", O_RDWR | O_CREAT |O_APPEND, S_IRUSR | S_IWUSR);
 	char *str;
-// size_t		BUFFER_SIZE = 32;//comment this out before compiling
-//	ft_putendl_fd("                  /´¯/)         ", fd);
-//	ft_putendl_fd("                ,/¯  /          ", fd);
-//	ft_putendl_fd("               /    /           ", fd);
-//	ft_putendl_fd("          /´¯/'   '/´¯¯`·¸      ", fd);
-//	ft_putendl_fd("      /'/   /    /       /¨¯\\   ", fd);
-//	ft_putendl_fd("     ('(   ´   ´     ¯~/'   ')  ", fd);
-//	ft_putendl_fd("     \\                 '   /  ", fd);
-//	ft_putendl_fd("      ''   \\           _.·´     ", fd);
-//	ft_putendl_fd("        \\              (        ", fd);
-//	ft_putendl_fd("          \\             \\       ", fd);
-//	ft_putendl_fd("", fd);
+
 	while (get_next_line(fd, &str))
 	{
 		printf("%s\n", str);
