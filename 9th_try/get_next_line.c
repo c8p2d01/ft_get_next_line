@@ -21,7 +21,7 @@ char    *ft_strjoin(char *s1, char *s2)
     if (!tmp)
         return (NULL);
     ft_memcpy(tmp, s1, ft_strlen(s1));
-    ft_memcpy(tmp + ft_strlen(s1), s2, ft_strlen(s2));
+    ft_memcpy(&(tmp[ft_strlen(s1)]), s2, ft_strlen(s2));
     return (tmp);
 }
 
@@ -41,7 +41,7 @@ char	*ft_substr(char const *s, unsigned int start, size_t len)
 	res = ft_calloc(lsub + 1, 1);
 	if (!res)
 		return (NULL);
-	ft_memcpy(res, &s[start], len);
+	ft_memcpy(res, &s[start], lsub);
 	return (res);
 }
 
@@ -62,33 +62,59 @@ void	ft_buffR(char *o_buffer, char *remainder)
 	}
 }
 
+char	*freejoin(char *line, char *buffer, int opt)
+{
+	char	*tmp;
+	char	*end;
+	int		r;
+
+	if (opt == -10)
+	{
+		tmp = ft_strjoin(line, buffer);
+		free (line);
+		line = tmp;
+		return (line);
+	}
+	else
+	r =	0;
+	while (buffer[r] != '\n' && buffer[r] != '\0')
+		r++;
+	end = ft_substr(buffer, 0, r + 1);
+	tmp = ft_strjoin(line, end);
+	free (line);
+	free (end);
+	line = tmp;
+	ft_buffR(buffer, &buffer[r] + 1);
+	if (opt == 0)
+		ft_bzero(buffer, BUFFER_SIZE);
+	return (line);
+}
+
 char	*get_next_line(int fd)
 {
 	static char	buffer[BUFFER_SIZE + 1];
 	char		*line;
-	char		*end;
-	char		*tmp;
 	int			r;
 
 	line = ft_calloc(1, sizeof(char));
 	r = BUFFER_SIZE;
 	while (!ft_strchr(buffer, '\n') && r == BUFFER_SIZE)
 	{
-		tmp = ft_strjoin(line, buffer);
-		free (line);
-		line = tmp;
+		line = freejoin(line, buffer, -10);
 		r = read(fd, buffer, BUFFER_SIZE);
-		buffer[r] = '\0';
-		if (fd < 0 || r <= 0)
+		ft_bzero(&buffer[r], ft_strlen(&buffer[r]));
+		if (fd < 0 || r < 0)
+			free (line);
+		if (fd < 0 || r < 0)
 			return (NULL);
 	}
-	r = 0;
-	while (buffer[r] != '\n' && buffer[r] != '\0')
-		r++;
-	end = ft_substr(buffer, 0, r);
-	tmp = ft_strjoin(line, end);
-	free (end);
-	free (line);
-	ft_buffR(buffer, &buffer[r] + 1);
-	return (ft_strjoin(tmp, "\n"));
+	if (r == 0 && line[0])
+		return (line);
+	else if (r == 0)
+	{
+		free (line);
+		return (NULL);
+	}
+	line = freejoin(line, buffer, 1);
+	return (line);
 }
