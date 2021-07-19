@@ -10,7 +10,7 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "get_next_line.h"
+#include "get_next_line_bonus.h"
 
 // sets n bytes of "s" to the value '\0'
 void	ft_bzero(void *s, size_t n)

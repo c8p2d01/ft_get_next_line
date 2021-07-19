@@ -10,17 +10,8 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "get_next_line.h"
+#include "get_next_line_bonus.h"
 
-// #include <stdio.h>
-// #include <stdlib.h>
-// #include <unistd.h>
-// #include <sys/types.h>
-// #include <sys/stat.h>
-// #include <fcntl.h>
-// # ifndef BUFFER_SIZE
-// #  define	BUFFER_SIZE 10000000
-// # endif
 // concatenate two strings into one new string, replacing the first one
 char	*ft_strjoin(char *s1, char *s2)
 {
@@ -100,7 +91,7 @@ char	*freejoin(char *line, char *buffer, int opt)
 
 char	*get_next_line(int fd)
 {
-	static char	buffer[4096][BUFFER_SIZE + 1];
+	static char	buffer[MAX_FD][BUFFER_SIZE + 1];
 	char		*line;
 	int			r;
 
@@ -110,7 +101,7 @@ char	*get_next_line(int fd)
 	{
 		line = freejoin(line, buffer[fd], -10);
 		r = read(fd, buffer[fd], BUFFER_SIZE);
-		ft_bzero(&((buffer[fd])[r]), ft_strlen(&((buffer[fd])[r])));
+		ft_bzero(&((buffer[fd])[r]), BUFFER_SIZE + 1 - r);
 		if (fd < 0 || r < 0)
 			free (line);
 		if (fd < 0 || r < 0)
@@ -118,11 +109,10 @@ char	*get_next_line(int fd)
 	}
 	if (r == 0 && line[0])
 		return (line);
-	else if (r == 0)
-	{
+	if (r == 0)
 		free (line);
+	if (r == 0)
 		return (NULL);
-	}
 	line = freejoin(line, buffer[fd], 1);
 	return (line);
 }
@@ -134,7 +124,7 @@ char	*get_next_line(int fd)
 // 	int a = 0;
 // 	while (a < 10)
 // 	{
-// 		str = get_next_line(30);
+// 		str = get_next_line(-1);
 // 		if (str != NULL)
 // 		{
 // 		    printf("%s", str);

@@ -11,7 +11,15 @@
 /* ************************************************************************** */
 
 #include "get_next_line.h"
-
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+# ifndef BUFFER_SIZE
+#  define	BUFFER_SIZE 42
+# endif
 // concatenate two strings into one new string, replacing the first one
 char	*ft_strjoin(char *s1, char *s2)
 {
@@ -118,33 +126,25 @@ char	*get_next_line(int fd)
 	line = freejoin(line, buffer, 1);
 	return (line);
 }
-// #include <stdio.h>
-// #include <stdlib.h>
-// #include <unistd.h>
-// #include <sys/types.h>
-// #include <sys/stat.h>
-// #include <fcntl.h>
-// # ifndef BUFFER_SIZE
-// #  define	BUFFER_SIZE 42
-// # endif
-// int main(void)
-// {
-// 	int fd;
-// 	fd = open("test", O_RDWR | O_CREAT | O_APPEND, S_IRUSR | S_IWUSR);
-// 	char *str;
-// 	int a = 0;
-// 	while (a < 10)
-// 	{
-// 		str = get_next_line(fd);
-// 		if (str != NULL)
-// 		{
-// 		    printf("%s", str);
-// 		    free (str);
-// 		}
-// 		else
-// 			break;
-// 		a++;
-// 	}
-// 	free (str);
-// 	close(fd);
-// }
+
+int main(void)
+{
+	int fd;
+	fd = open("test", O_RDWR | O_CREAT | O_APPEND, S_IRUSR | S_IWUSR);
+	char *str;
+	int a = 0;
+	while (a < 10)
+	{
+		str = get_next_line(-1);
+		if (str != NULL)
+		{
+		    printf("%s", str);
+		    free (str);
+		}
+		else
+			break;
+		a++;
+	}
+	free (str);
+	close(fd);
+}
