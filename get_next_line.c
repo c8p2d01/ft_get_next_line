@@ -10,8 +10,17 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "get_next_line_bonus.h"
+#include "get_next_line.h"
 
+// #include <stdio.h>
+// #include <stdlib.h>
+// #include <unistd.h>
+// #include <sys/types.h>
+// #include <sys/stat.h>
+// #include <fcntl.h>
+// # ifndef BUFFER_SIZE
+// #  define	BUFFER_SIZE 42
+// # endif
 // concatenate two strings into one new string, replacing the first one
 char	*ft_strjoin(char *s1, char *s2)
 {
@@ -71,17 +80,18 @@ char	*freejoin(char *line, char *buffer, int opt)
 	if (opt == -10)
 	{
 		tmp = ft_strjoin(line, buffer);
-		free (line);
+		free(line);
 		line = tmp;
 		return (line);
 	}
-	r = 0;
+	else
+		r = 0;
 	while (buffer[r] != '\n' && buffer[r] != '\0')
 		r++;
 	end = ft_substr(buffer, 0, r + 1);
 	tmp = ft_strjoin(line, end);
-	free (line);
-	free (end);
+	free(line);
+	free(end);
 	line = tmp;
 	ft_buffR(buffer, &buffer[r] + 1);
 	if (opt == 0)
@@ -91,29 +101,30 @@ char	*freejoin(char *line, char *buffer, int opt)
 
 char	*get_next_line(int fd)
 {
-	static char	buffer[MAX_FD][BUFFER_SIZE + 1];
+	static char	buffer[BUFFER_SIZE + 1];
 	char		*line;
 	int			r;
 
 	line = ft_calloc(1, sizeof(char));
 	r = BUFFER_SIZE;
-	while (!ft_strchr(buffer[fd], '\n') && r == BUFFER_SIZE)
+	while (!ft_strchr(buffer, '\n') && r == BUFFER_SIZE)
 	{
-		line = freejoin(line, buffer[fd], -10);
-		r = read(fd, buffer[fd], BUFFER_SIZE);
-		ft_bzero(&((buffer[fd])[r]), BUFFER_SIZE + 1 - r);
+		line = freejoin(line, buffer, -10);
+		r = read(fd, buffer, BUFFER_SIZE);
+		ft_bzero(&buffer[r], ft_strlen(&buffer[r]));
 		if (fd < 0 || r < 0)
-			free (line);
+			free(line);
 		if (fd < 0 || r < 0)
 			return (NULL);
 	}
 	if (r == 0 && line[0])
 		return (line);
-	if (r == 0)
+	else if (r == 0)
+	{
 		free (line);
-	if (r == 0)
 		return (NULL);
-	line = freejoin(line, buffer[fd], 1);
+	}
+	line = freejoin(line, buffer, 1);
 	return (line);
 }
 // int main(void)
